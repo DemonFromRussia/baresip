@@ -122,32 +122,32 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
 
 // Function to encode and send a frame
 static int send_frame(AVFormatContext *fmt_ctx, AVCodecContext *codec_ctx, AVFrame *frame) {
-    AVPacket pkt = {0};
     int ret;
 
-    // Send the frame to the encoder
+    // Send frame for encoding
     ret = avcodec_send_frame(codec_ctx, frame);
     if (ret < 0) {
-        warning("Error sending a frame to the encoder\n");
-        return -1;
+        fprintf(stderr, "Error sending frame to encoder: %s\n", av_err2str(ret));
+        return ret;
     }
 
-    // Receive the encoded packet
+    // Receive packet from encoder
+    AVPacket pkt = {0};
+    av_init_packet(&pkt);
+    
     ret = avcodec_receive_packet(codec_ctx, &pkt);
-    if (ret < 0) {
-        warning("Error receiving packet from encoder\n");
-        return -1;
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+        return 0; // Not an error, just no more packets to receive right now
+    } else if (ret < 0) {
+        fprintf(stderr, "Error receiving packet from encoder: %s\n", av_err2str(ret));
+        return ret;
     }
 
-    // Rescale output packet timestamp values from codec to stream timebase
-    av_packet_rescale_ts(&pkt, codec_ctx->time_base, fmt_ctx->streams[0]->time_base);
-    pkt.stream_index = 0;
-
-    // Write the packet
+    // Write the encoded packet to the output format context
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0) {
-        warning("Error writing frame to output\n");
-        return -1;
+        fprintf(stderr, "Error writing encoded packet: %s\n", av_err2str(ret));
+        return ret;
     }
 
     av_packet_unref(&pkt);
