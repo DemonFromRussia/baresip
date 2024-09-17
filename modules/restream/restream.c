@@ -128,7 +128,7 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
 
     // Calculate the PTS for the frame based on the frame number and time base
     //AVRational time_base = codec_ctx->time_base;
-    frame->pts = 0; //frame_number * (time_base.den / time_base.num) / fps;
+     //frame_number * (time_base.den / time_base.num) / fps;
 
     // Send frame for encoding
     ret = avcodec_send_frame(codec_ctx, frame);
@@ -192,6 +192,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->format = AV_PIX_FMT_YUV420P;
     yuv_frame->width = width;
     yuv_frame->height = height;
+    yuv_frame->pts = frameNumber;
 
     // Allocate buffers for YUV frame
     av_frame_get_buffer(yuv_frame, 32);
