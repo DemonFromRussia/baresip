@@ -164,6 +164,9 @@ static bool isStreaming = false;
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			uint64_t *timestamp)
 {
+    if (!frame)
+		return 0;
+
 	if (!isStreaming) {
 		info("restream: start streaming at %s\n", output_url);
 		// Open the RTMP stream
