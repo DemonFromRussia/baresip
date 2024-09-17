@@ -161,6 +161,28 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
     return 0;
 }
 
+// Function to generate and save SDP file
+static int write_sdp_file(AVFormatContext *fmt_ctx, const char *sdp_file_path) {
+    char sdp[2048] = {0};
+    int ret = av_sdp_create(&fmt_ctx, 1, sdp, sizeof(sdp));
+    if (ret < 0) {
+        warning("Failed to create SDP: %s\n", av_err2str(ret));
+        return -1;
+    }
+
+    // Write the SDP to a file
+    FILE *sdp_file = fopen(sdp_file_path, "w");
+    if (!sdp_file) {
+        warning("Could not open SDP file for writing\n");
+        return -1;
+    }
+    fprintf(sdp_file, "%s", sdp);
+    fclose(sdp_file);
+
+    info("SDP file written to %s\n", sdp_file_path);
+    return 0;
+}
+
 static const char *output_url = "rtp://127.0.0.1:5004";
 static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
@@ -184,6 +206,10 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			warning("Failed to open RTMP stream\n");
 			return -1;
 		}
+
+        // Write the SDP file (e.g., to "stream.sdp")
+        write_sdp_file(fmt_ctx, "/home/ubuntu/stream.sdp");
+
 		isStreaming = true;
 	}
 
