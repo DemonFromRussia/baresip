@@ -128,7 +128,7 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
 
     // Calculate the PTS for the frame based on the frame number and time base
     //AVRational time_base = codec_ctx->time_base;
-    frame->pts = 0 //frame_number * (time_base.den / time_base.num) / fps;
+    frame->pts = 0; //frame_number * (time_base.den / time_base.num) / fps;
 
     // Send frame for encoding
     ret = avcodec_send_frame(codec_ctx, frame);
@@ -155,7 +155,7 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
     if (ret < 0) {
         warning(stderr, "Error writing encoded packet: %s\n", av_err2str(ret));
         return ret;
-    }
+    }git 
 
     av_packet_unref(&pkt);
     return 0;
