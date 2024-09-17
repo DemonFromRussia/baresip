@@ -46,7 +46,7 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
     int ret;
 
     // Allocate the format context for output
-    avformat_alloc_output_context2(&fmt_ctx, NULL, "flv", output_url);
+    avformat_alloc_output_context2(&fmt_ctx, NULL, "rtp", output_url);
     if (!fmt_ctx) {
         warning("Could not create output context\n");
         return -1;
@@ -161,7 +161,7 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
     return 0;
 }
 
-static const char *output_url = "udp://127.0.0.1:1935";
+static const char *output_url = "rtp://127.0.0.1:5004";
 static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
 static int ret;
