@@ -127,7 +127,7 @@ static int send_frame(AVFormatContext *fmt_ctx, AVCodecContext *codec_ctx, AVFra
     // Send frame for encoding
     ret = avcodec_send_frame(codec_ctx, frame);
     if (ret < 0) {
-        fprintf(stderr, "Error sending frame to encoder: %s\n", av_err2str(ret));
+        warning(stderr, "Error sending frame to encoder: %s\n", av_err2str(ret));
         return ret;
     }
 
@@ -139,14 +139,14 @@ static int send_frame(AVFormatContext *fmt_ctx, AVCodecContext *codec_ctx, AVFra
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
         return 0; // Not an error, just no more packets to receive right now
     } else if (ret < 0) {
-        fprintf(stderr, "Error receiving packet from encoder: %s\n", av_err2str(ret));
+        warning(stderr, "Error receiving packet from encoder: %s\n", av_err2str(ret));
         return ret;
     }
 
     // Write the encoded packet to the output format context
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0) {
-        fprintf(stderr, "Error writing encoded packet: %s\n", av_err2str(ret));
+        warning(stderr, "Error writing encoded packet: %s\n", av_err2str(ret));
         return ret;
     }
 
