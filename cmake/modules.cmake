@@ -84,6 +84,7 @@ set(MODULES
   wincons
   winwave
   x11
+  restream
 
   CACHE STRING "List of modules like 'turn;pipewire;alsa'"
 )
