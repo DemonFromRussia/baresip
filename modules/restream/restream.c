@@ -121,8 +121,12 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
 }
 
 // Function to encode and send a frame
-static int send_frame(AVFormatContext *fmt_ctx, AVCodecContext *codec_ctx, AVFrame *frame) {
+static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt_ctx, AVFrame *frame, int frame_number, int fps) {
     int ret;
+
+    // Calculate the PTS for the frame based on the frame number and time base
+    AVRational time_base = codec_ctx->time_base;
+    frame->pts = frame_number * (time_base.den / time_base.num) / fps;
 
     // Send frame for encoding
     ret = avcodec_send_frame(codec_ctx, frame);
@@ -134,7 +138,7 @@ static int send_frame(AVFormatContext *fmt_ctx, AVCodecContext *codec_ctx, AVFra
     // Receive packet from encoder
     AVPacket pkt = {0};
     av_init_packet(&pkt);
-    
+
     ret = avcodec_receive_packet(codec_ctx, &pkt);
     if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
         return 0; // Not an error, just no more packets to receive right now
@@ -144,6 +148,7 @@ static int send_frame(AVFormatContext *fmt_ctx, AVCodecContext *codec_ctx, AVFra
     }
 
     // Write the encoded packet to the output format context
+    pkt.stream_index = 0;  // Make sure the stream index is set correctly
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0) {
         warning(stderr, "Error writing encoded packet: %s\n", av_err2str(ret));
@@ -160,6 +165,7 @@ static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
 static int ret;
 static bool isStreaming = false;
+static uint frameNumber = 0;
 
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			uint64_t *timestamp)
@@ -204,12 +210,13 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     }
 
     // Send the converted YUV frame
-    yuv_frame->pts = video_calc_rtp_timestamp_fix(*timestamp);
-    ret = send_frame(fmt_ctx, codec_ctx, yuv_frame);
+    ret = encode_and_send_frame(fmt_ctx, codec_ctx, yuv_frame, frameNumber, fps);
     if (ret < 0) {
         warning("Failed to send frame\n");
         return -1;
     }
+
+    frameNumber++;
 
 	return 0;
 }
@@ -234,7 +241,7 @@ static int module_close(void)
 	vidfilt_unregister(&restream);
 
 	  // Flush the encoder
-    send_frame(fmt_ctx, codec_ctx, NULL);
+    encode_and_send_frame(fmt_ctx, codec_ctx, NULL, frameNumber, fps);
 
     // Write the trailer
     av_write_trailer(fmt_ctx);
@@ -245,6 +252,7 @@ static int module_close(void)
     avformat_network_deinit();
 
 	isStreaming = false;
+    frameNumber = 0;
 
 	return 0;
 }
