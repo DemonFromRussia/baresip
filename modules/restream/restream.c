@@ -148,14 +148,14 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
         warning(stderr, "Error receiving packet from encoder: %s\n", av_err2str(ret));
         return ret;
     }
-
+ 
     // Write the encoded packet to the output format context
     pkt.stream_index = 0;  // Make sure the stream index is set correctly
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0) {
         warning(stderr, "Error writing encoded packet: %s\n", av_err2str(ret));
         return ret;
-    }git 
+    } 
 
     av_packet_unref(&pkt);
     return 0;
