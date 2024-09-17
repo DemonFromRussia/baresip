@@ -154,7 +154,7 @@ static int send_frame(AVFormatContext *fmt_ctx, AVCodecContext *codec_ctx, AVFra
     return 0;
 }
 
-static const char *output_url = "rtmp://127.0.0.1:1935/live/stream";
+static const char *output_url = "udp://127.0.0.1:1935";
 static int width = 1280, height = 720, fps = 30;
 static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
