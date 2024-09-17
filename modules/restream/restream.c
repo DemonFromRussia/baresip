@@ -127,8 +127,8 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
     int ret;
 
     // Calculate the PTS for the frame based on the frame number and time base
-    AVRational time_base = codec_ctx->time_base;
-    frame->pts = frame_number * (time_base.den / time_base.num) / fps;
+    //AVRational time_base = codec_ctx->time_base;
+    frame->pts = 0 //frame_number * (time_base.den / time_base.num) / fps;
 
     // Send frame for encoding
     ret = avcodec_send_frame(codec_ctx, frame);
