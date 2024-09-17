@@ -204,7 +204,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     }
 
     // Send the converted YUV frame
-    yuv_frame->pts = 0;
+    yuv_frame->pts = video_calc_rtp_timestamp_fix(*timestamp);
     ret = send_frame(fmt_ctx, codec_ctx, yuv_frame);
     if (ret < 0) {
         warning("Failed to send frame\n");
