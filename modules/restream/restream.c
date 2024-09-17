@@ -36,6 +36,8 @@
  */
 
 // Function to open an RTMP stream
+static int width = 640, height = 480, fps = 30;
+
 static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, AVCodecContext **out_codec_ctx, int width, int height, int fps) {
     AVFormatContext *fmt_ctx = NULL;
     AVCodecContext *codec_ctx = NULL;
@@ -160,7 +162,6 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
 }
 
 static const char *output_url = "udp://127.0.0.1:1935";
-static int width = 1280, height = 720, fps = 30;
 static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
 static int ret;
