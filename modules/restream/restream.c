@@ -207,12 +207,16 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     for (int i = 0; i < yuv_frame->height / 2; i++) {
         for (int j = 0; j < yuv_frame->width / 2; j++) {
             yuv_frame->data[1][i * yuv_frame->linesize[1] + j] = frame->data[1][i * frame->linesize[1] + j]; // U
-            yuv_frame->data[2][i * yuv_frame->linesize[2] + j] = frame->data[1][i * frame->linesize[2] + j];; // V
+            yuv_frame->data[2][i * yuv_frame->linesize[2] + j] = frame->data[2][i * frame->linesize[2] + j];; // V
         }
     }
 
     // Send the converted YUV frame
-    ret = encode_and_send_frame(fmt_ctx, codec_ctx, yuv_frame, frameNumber, fps);
+    ret = encode_and_send_frame(codec_ctx, fmt_ctx, yuv_frame, frameNumber, fps);
+
+    av_frame_unref(yuv_frame);
+    av_frame_free(&yuv_frame);
+
     if (ret < 0) {
         warning("Failed to send frame\n");
         return -1;
