@@ -221,7 +221,9 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->width = width;
     yuv_frame->height = height;
 
-    yuv_frame->pts = frameNumber * (codec_ctx->time_base.den / fps);
+    yuv_frame->pts = frameNumber * av_rescale_q(1, codec_ctx->framerate, codec_ctx->time_base);
+    // yuv_frame->pts = frameNumber * (codec_ctx->time_base.den / fps);
+    // yuv_frame->dts = frame->pts;
     //yuv_frame->pts = frameNumber;
 
     debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, timestamp, yuv_frame->pts);
