@@ -183,7 +183,7 @@ static int write_sdp_file(AVFormatContext *fmt_ctx, const char *sdp_file_path) {
     return 0;
 }
 
-static const char *output_url = "rtp://127.0.0.1:5004";
+static const char *output_url = "rtp://127.0.0.1:5085";
 static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
 static int ret;
@@ -193,8 +193,10 @@ static uint frameNumber = 0;
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			uint64_t *timestamp)
 {
-    if (!frame)
-		return 0;
+    if (!frame) { 
+        debug("restream: no frame\n");
+        return 0;
+    }	
 
 	if (!isStreaming) {
 		info("restream: start streaming at %s\n", output_url);
@@ -285,6 +287,8 @@ static int module_close(void)
 
 	isStreaming = false;
     frameNumber = 0;
+
+    info("restream: stopped streaming at %s\n", output_url);
 
 	return 0;
 }
