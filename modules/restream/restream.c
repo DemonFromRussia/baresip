@@ -233,17 +233,24 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 
 	// Here you should receive your raw frames and convert them to YUV420p
     // For the sake of this example, we will just fill the frame with black pixels
-    for (int i = 0; i < yuv_frame->height; i++) {
-        for (int j = 0; j < yuv_frame->width; j++) {
-            yuv_frame->data[0][i * yuv_frame->linesize[0] + j] = frame->data[0][i * frame->linesize[0] + j];   // Y
-        }
-    }
-    for (int i = 0; i < yuv_frame->height / 2; i++) {
-        for (int j = 0; j < yuv_frame->width / 2; j++) {
-            yuv_frame->data[1][i * yuv_frame->linesize[1] + j] = frame->data[1][i * frame->linesize[1] + j]; // U
-            yuv_frame->data[2][i * yuv_frame->linesize[2] + j] = frame->data[2][i * frame->linesize[2] + j];; // V
-        }
-    }
+    // for (int i = 0; i < yuv_frame->height; i++) {
+    //     for (int j = 0; j < yuv_frame->width; j++) {
+    //         yuv_frame->data[0][i * yuv_frame->linesize[0] + j] = frame->data[0][i * frame->linesize[0] + j];   // Y
+    //     }
+    // }
+    // for (int i = 0; i < yuv_frame->height / 2; i++) {
+    //     for (int j = 0; j < yuv_frame->width / 2; j++) {
+    //         yuv_frame->data[1][i * yuv_frame->linesize[1] + j] = frame->data[1][i * frame->linesize[1] + j]; // U
+    //         yuv_frame->data[2][i * yuv_frame->linesize[2] + j] = frame->data[2][i * frame->linesize[2] + j];; // V
+    //     }
+    // }
+
+    // Copy the Y plane
+    memcpy(yuv_frame->data[0], frame->data[0], yuv_frame->linesize[0] * yuv_frame->height);
+
+    // Copy the U and V planes
+    memcpy(yuv_frame->data[1], frame->data[1], yuv_frame->linesize[1] * yuv_frame->height / 2);
+    memcpy(yuv_frame->data[2], frame->data[2], yuv_frame->linesize[2] * yuv_frame->height / 2);
 
     // Send the converted YUV frame
     ret = encode_and_send_frame(codec_ctx, fmt_ctx, yuv_frame, frameNumber, fps);
