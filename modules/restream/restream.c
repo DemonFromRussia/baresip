@@ -220,7 +220,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->format = AV_PIX_FMT_YUV420P;
     yuv_frame->width = width;
     yuv_frame->height = height;
-    yuv_frame->pts = frameNumber;
+    yuv_frame->pts = timestamp * fps / 1000;
 
     // Allocate buffers for YUV frame
     av_frame_get_buffer(yuv_frame, 32);
