@@ -222,6 +222,8 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->height = height;
     yuv_frame->pts = frameNumber * 1 / fps;
 
+    debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, timestamp, yuv_frame->pts);
+
     // Allocate buffers for YUV frame
     av_frame_get_buffer(yuv_frame, 32);
 
