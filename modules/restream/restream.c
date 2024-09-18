@@ -36,7 +36,7 @@
  */
 
 // Function to open an RTMP stream
-static int width = 640, height = 480, fps = 30;
+static int width = 640, height = 480, fps = 25;
 
 static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, AVCodecContext **out_codec_ctx, int width, int height, int fps) {
     AVFormatContext *fmt_ctx = NULL;
