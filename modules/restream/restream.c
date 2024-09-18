@@ -220,7 +220,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->format = AV_PIX_FMT_YUV420P;
     yuv_frame->width = width;
     yuv_frame->height = height;
-    yuv_frame->pts = frameNumber * 1 / fps;
+    yuv_frame->pts = frameNumber;
 
     debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, timestamp, yuv_frame->pts);
 
