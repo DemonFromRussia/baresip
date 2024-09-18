@@ -181,10 +181,8 @@ static char *png_filename(const struct tm *tmx, const char *name,
 	sprintf(buf + strlen(buf), (tmx->tm_sec < 10 ? "-0%d.png" : "-%d.png"),
 					tmx->tm_sec);
 
-	// return buf;
-	return "snapshot.png";
+	return buf;
 }
-
 
 EXPORT_SYM const struct mod_export DECL_EXPORTS(snapshot) = {
 	"snapshot",
