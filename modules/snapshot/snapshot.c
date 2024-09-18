@@ -182,7 +182,7 @@ static char *png_filename(const struct tm *tmx, const char *name,
 					tmx->tm_sec);
 
 	// return buf;
-	return "snapshot.png"
+	return "snapshot.png";
 }
 
 
