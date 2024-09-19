@@ -190,30 +190,73 @@ static int ret;
 static bool isStreaming = false;
 static uint frameNumber = 0;
 
+static int stopStream() {
+    if (!isStreaming) {
+        return 0;
+    }
+
+      // Flush the encoder
+    encode_and_send_frame(fmt_ctx, codec_ctx, NULL, frameNumber, fps);
+
+    // Write the trailer
+    av_write_trailer(fmt_ctx);
+
+    // Clean up
+    avcodec_free_context(&codec_ctx);
+    avformat_free_context(fmt_ctx);
+    avformat_network_deinit();
+
+	isStreaming = false;
+    frameNumber = 0;
+
+    info("restream: stopped streaming at %s\n", output_url);
+}
+
+static int startStreamIfNeeded(int width, int height, int fps) {
+    // if (isStreaming) {
+    //     if (width != codec_ctx->width || height != codec_ctx->height) {
+    //         stopStream();
+    //     } else {
+    //         return 
+    //     }
+        
+    // }
+
+    info("restream: start streaming at %s\n", output_url);
+    // Open the RTMP stream
+    ret = open_rtmp_stream(&fmt_ctx, output_url, &codec_ctx, width, height, fps);
+    if (ret < 0) {
+        warning("Failed to open RTMP stream\n");
+        return -1;
+    }
+
+    // Write the SDP file (e.g., to "stream.sdp")
+    write_sdp_file(fmt_ctx, "/home/ubuntu/stream.sdp");
+
+	isStreaming = true;
+}
+
+static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
+			 const struct vidfilt *vf, struct vidfilt_prm *prm,
+			 const struct video *vid)
+{
+	int ret;
+
+    stopStream();
+    ret = startStreamIfNeeded(prm->width, prm->height, (int) prm->fps);
+
+	return ret;
+}
+
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			uint64_t *timestamp)
 {
     if (!frame) { 
         debug("restream: no frame\n");
         return 0;
-    }	
+    }
 
-	if (!isStreaming) {
-		info("restream: start streaming at %s\n", output_url);
-		// Open the RTMP stream
-		width = frame->size.w;
-		height = frame->size.h;
-		ret = open_rtmp_stream(&fmt_ctx, output_url, &codec_ctx, width, height, fps);
-		if (ret < 0) {
-			warning("Failed to open RTMP stream\n");
-			return -1;
-		}
-
-        // Write the SDP file (e.g., to "stream.sdp")
-        write_sdp_file(fmt_ctx, "/home/ubuntu/stream.sdp");
-
-		isStreaming = true;
-	}
+    // startStreamIfNeeded(frame->size.w, frame->size.h, fps);
 
 	// Allocate  YUV frame
     AVFrame *yuv_frame = av_frame_alloc();
@@ -230,20 +273,6 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 
     // Allocate buffers for YUV frame
     av_frame_get_buffer(yuv_frame, 32);
-
-	// Here you should receive your raw frames and convert them to YUV420p
-    // For the sake of this example, we will just fill the frame with black pixels
-    // for (int i = 0; i < yuv_frame->height; i++) {
-    //     for (int j = 0; j < yuv_frame->width; j++) {
-    //         yuv_frame->data[0][i * yuv_frame->linesize[0] + j] = frame->data[0][i * frame->linesize[0] + j];   // Y
-    //     }
-    // }
-    // for (int i = 0; i < yuv_frame->height / 2; i++) {
-    //     for (int j = 0; j < yuv_frame->width / 2; j++) {
-    //         yuv_frame->data[1][i * yuv_frame->linesize[1] + j] = frame->data[1][i * frame->linesize[1] + j]; // U
-    //         yuv_frame->data[2][i * yuv_frame->linesize[2] + j] = frame->data[2][i * frame->linesize[2] + j];; // V
-    //     }
-    // }
 
     // Copy the Y plane
     memcpy(yuv_frame->data[0], frame->data[0], yuv_frame->linesize[0] * yuv_frame->height);
@@ -271,6 +300,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 static struct vidfilt restream = {
 	.name = "restream",
 	.dech = decode,
+    .decupdh = decode_update,
 };
 
 static int module_init(void)
@@ -287,21 +317,9 @@ static int module_close(void)
 {
 	vidfilt_unregister(&restream);
 
-	  // Flush the encoder
-    encode_and_send_frame(fmt_ctx, codec_ctx, NULL, frameNumber, fps);
-
-    // Write the trailer
-    av_write_trailer(fmt_ctx);
-
-    // Clean up
-    avcodec_free_context(&codec_ctx);
-    avformat_free_context(fmt_ctx);
     avformat_network_deinit();
 
-	isStreaming = false;
-    frameNumber = 0;
-
-    info("restream: stopped streaming at %s\n", output_url);
+    stopStream();
 
 	return 0;
 }
