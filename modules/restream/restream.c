@@ -257,12 +257,14 @@ static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
     stopStream();
     ret = startStreamIfNeeded(vid->cfg.width, vid->cfg.height, (int) vid->cfg.fps);
 
-	return ret;
+	return 0;
 }
 
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			uint64_t *timestamp)
 {
+    return 0;
+
     if (!frame) { 
         debug("restream: no frame\n");
         return 0;
