@@ -12,7 +12,6 @@
 #include <re.h>
 #include <rem.h>
 #include <baresip.h>
-#include <magic.h>
 #include <libavutil/pixdesc.h>
 #include <libavformat/avformat.h>
 #include <libavcodec/avcodec.h>
@@ -243,8 +242,7 @@ static int startStreamIfNeeded(int width, int height, int fps) {
 }
 
 struct video {
-	MAGIC_DECL              /**< Magic number for debugging           */
-	struct config_video cfg;/**< Video configuration                  */
+	struct config_video cfg; /**< Video configuration                  */
 };
 
 static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
