@@ -238,6 +238,7 @@ static int startStreamIfNeeded(int width, int height, int fps) {
     write_sdp_file(fmt_ctx, "/home/ubuntu/stream.sdp");
 
 	isStreaming = true;
+    return 0;
 }
 
 struct video {
@@ -250,9 +251,6 @@ static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
 			 const struct video *vid)
 {
 	int ret;
-    // struct video *someVideo;
-
-    // someVideo = (struct video *) vid;
 
     stopStream();
     ret = startStreamIfNeeded(vid->cfg.width, vid->cfg.height, (int) vid->cfg.fps);
