@@ -38,6 +38,10 @@
 // Function to open an RTMP stream
 static int width = 640, height = 480, fps = 25;
 
+struct restream_dec {
+	struct vidfilt_dec_st vf;   /**< Inheritance           */
+};
+
 static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, AVCodecContext **out_codec_ctx, int width, int height, int fps) {
     AVFormatContext *fmt_ctx = NULL;
     AVCodecContext *codec_ctx = NULL;
@@ -241,6 +245,11 @@ static int startStreamIfNeeded(int width, int height, int fps) {
     return 0;
 }
 
+static void decode_destructor(void *arg)
+{
+	return;
+}
+
 struct video {
 #ifndef RELEASE
     uint32_t magic;
@@ -252,14 +261,28 @@ static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
 			 const struct vidfilt *vf, struct vidfilt_prm *prm,
 			 const struct video *vid)
 {
-	int ret;
-
     width = vid->cfg.width;
     height = vid->cfg.height;
     fps = (int) vid->cfg.fps;
 
     stopStream();
     ret = startStreamIfNeeded(width, height, fps);
+
+    struct restream_dec *st;
+	(void)prm;
+	(void)vid;
+
+	if (!stp || !ctx || !vf)
+		return EINVAL;
+
+	if (*stp)
+		return 0;
+
+	st = mem_zalloc(sizeof(*st), decode_destructor);
+	if (!st)
+		return ENOMEM;
+
+	*stp = (struct vidfilt_dec_st *)st;
 
 	return 0;
 }
