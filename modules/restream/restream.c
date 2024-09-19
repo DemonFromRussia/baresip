@@ -224,7 +224,7 @@ static int startStreamIfNeeded(int width, int height, int fps) {
     // }
 
     info(
-        "restream: start streaming at %s width %d height %d fps %d",
+        "restream: start streaming at %s width %d height %d fps %d\n",
          output_url, width, height, fps
     );
     // Open the RTMP stream
@@ -254,17 +254,19 @@ static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
 {
 	int ret;
 
-    stopStream();
-    ret = startStreamIfNeeded(vid->cfg.width, vid->cfg.height, (int) vid->cfg.fps);
+    width = vid->cfg.width;
+    height = vid->cfg.height;
+    fps = (int) vid->cfg.fps;
 
-	return 0;
+    stopStream();
+    ret = startStreamIfNeeded(width, height, fps);
+
+	return ret;
 }
 
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			uint64_t *timestamp)
 {
-    return 0;
-
     if (!frame) { 
         debug("restream: no frame\n");
         return 0;
