@@ -242,6 +242,9 @@ static int startStreamIfNeeded(int width, int height, int fps) {
 }
 
 struct video {
+#ifndef RELEASE
+    uint32_t magic;
+#endif
 	struct config_video cfg; /**< Video configuration                  */
 };
 
