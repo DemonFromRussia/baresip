@@ -222,7 +222,10 @@ static int startStreamIfNeeded(int width, int height, int fps) {
         
     // }
 
-    info("restream: start streaming at %s\n", output_url);
+    info(
+        "restream: start streaming at %s\n width %d height %d fps %d",
+         output_url, width, height, fps
+    );
     // Open the RTMP stream
     ret = open_rtmp_stream(&fmt_ctx, output_url, &codec_ctx, width, height, fps);
     if (ret < 0) {
@@ -253,6 +256,10 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 {
     if (!frame) { 
         debug("restream: no frame\n");
+        return 0;
+    }
+
+    if (!isStreaming) {
         return 0;
     }
 
