@@ -223,7 +223,7 @@ static int startStreamIfNeeded(int width, int height, int fps) {
     // }
 
     info(
-        "restream: start streaming at %s\n width %d height %d fps %d",
+        "restream: start streaming at %s width %d height %d fps %d",
          output_url, width, height, fps
     );
     // Open the RTMP stream
