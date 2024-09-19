@@ -196,6 +196,7 @@ static int stopStream() {
         return 0;
     }
 
+    info("stopping stream");
       // Flush the encoder
     encode_and_send_frame(fmt_ctx, codec_ctx, NULL, frameNumber, fps);
 
