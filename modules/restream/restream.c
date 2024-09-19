@@ -290,7 +290,6 @@ static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 			uint64_t *timestamp)
 {
-    return 0;
     if (!frame) { 
         debug("restream: no frame\n");
         return 0;
