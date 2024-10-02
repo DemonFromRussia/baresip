@@ -88,6 +88,17 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
         codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
+    codec_ctx->max_b_frames = 0;            // не отправлять B фреймы
+    // codec_ctx->level = level;               // уровень качества
+    codec_ctx->refs = 1;                    // количество кадров "ссылок"
+    codec_ctx->thread_count = 4;            // количество потоков для кодирования. можно увеличить выставив thread_type
+    codec_ctx->thread_type = FF_THREAD_SLICE;
+
+    // https://ru.wikipedia.org/wiki/H.264
+    av_opt_set(codec_ctx->priv_data, "profile", "baseline", 0);      // профиль базовый для мобильных устройств
+    av_opt_set(codec_ctx->priv_data, "preset", "fast", 0);           // скорость кодирования. обратна пропорциональна качеству
+    av_opt_set(codec_ctx->priv_data, "tune", "zerolatency", 0);      // минимальная задержка. обязательно для sip 
+
     // Open the codec
     ret = avcodec_open2(codec_ctx, codec, NULL);
     if (ret < 0) {
@@ -239,7 +250,7 @@ static int startStreamIfNeeded(int width, int height, int fps) {
     }
 
     // Write the SDP file (e.g., to "stream.sdp")
-    write_sdp_file(fmt_ctx, "/home/ubuntu/stream.sdp");
+    write_sdp_file(fmt_ctx, "/tmp/stream.sdp");
 
 	isStreaming = true;
     return 0;
@@ -367,8 +378,8 @@ static int module_close(void)
 	return 0;
 }
 
-EXPORT_SYM const struct mod_export DECL_EXPORTS(snapshot) = {
-	"snapshot",
+EXPORT_SYM const struct mod_export DECL_EXPORTS(restream) = {
+	"restream",
 	"vidfilt",
 	module_init,
 	module_close
