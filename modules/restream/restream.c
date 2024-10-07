@@ -7,6 +7,8 @@
 #define _BSD_SOURCE 1
 #ifdef HAVE_UNISTD_H
 #include <unistd.h>
+#include <sys/stat.h>
+#include <stdio.h>
 #endif
 #include <re_atomic.h>
 #include <re.h>
@@ -18,7 +20,6 @@
 #include <libavutil/opt.h>
 #include <libavutil/imgutils.h>
 #include <libswscale/swscale.h>
-
 
 /**
  * @defgroup snapshot snapshot
@@ -38,13 +39,15 @@
 // // Function to open an RTMP stream
 // static int width = 640, height = 480, fps = 25;
 
-struct restream_dec {
-	struct vidfilt_dec_st vf;   /**< Inheritance           */
+struct restream_dec
+{
+    struct vidfilt_dec_st vf; /**< Inheritance           */
     struct video *vid;
     struct vidfilt_prm *prm;
 };
 
-static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, AVCodecContext **out_codec_ctx, int width, int height, int fps) {
+static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, AVCodecContext **out_codec_ctx, int width, int height, int fps)
+{
     AVFormatContext *fmt_ctx = NULL;
     AVCodecContext *codec_ctx = NULL;
     AVStream *video_stream = NULL;
@@ -53,27 +56,31 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
 
     // Allocate the format context for output
     avformat_alloc_output_context2(&fmt_ctx, NULL, "rtp", output_url);
-    if (!fmt_ctx) {
+    if (!fmt_ctx)
+    {
         warning("Could not create output context\n");
         return -1;
     }
 
     // Find the H.264 encoder
     codec = avcodec_find_encoder(AV_CODEC_ID_H264);
-    if (!codec) {
+    if (!codec)
+    {
         warning("Codec not found\n");
         return -1;
     }
 
     // Add a new stream to the format context
     video_stream = avformat_new_stream(fmt_ctx, codec);
-    if (!video_stream) {
+    if (!video_stream)
+    {
         warning("Could not allocate stream\n");
         return -1;
     }
 
     codec_ctx = avcodec_alloc_context3(codec);
-    if (!codec_ctx) {
+    if (!codec_ctx)
+    {
         warning("Could not allocate codec context\n");
         return -1;
     }
@@ -86,31 +93,34 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
     codec_ctx->gop_size = 12; // Set GOP size
     codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
-    if (fmt_ctx->oformat->flags & AVFMT_GLOBALHEADER) {
+    if (fmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
+    {
         codec_ctx->flags |= AV_CODEC_FLAG_GLOBAL_HEADER;
     }
 
-    codec_ctx->max_b_frames = 0;            // не отправлять B фреймы
+    codec_ctx->max_b_frames = 0; // не отправлять B фреймы
     // codec_ctx->level = level;               // уровень качества
-    codec_ctx->refs = 1;                    // количество кадров "ссылок"
-    codec_ctx->thread_count = 4;            // количество потоков для кодирования. можно увеличить выставив thread_type
+    codec_ctx->refs = 1;         // количество кадров "ссылок"
+    codec_ctx->thread_count = 4; // количество потоков для кодирования. можно увеличить выставив thread_type
     codec_ctx->thread_type = FF_THREAD_SLICE;
 
     // https://ru.wikipedia.org/wiki/H.264
-    av_opt_set(codec_ctx->priv_data, "profile", "baseline", 0);      // профиль базовый для мобильных устройств
-    av_opt_set(codec_ctx->priv_data, "preset", "fast", 0);           // скорость кодирования. обратна пропорциональна качеству
-    av_opt_set(codec_ctx->priv_data, "tune", "zerolatency", 0);      // минимальная задержка. обязательно для sip 
+    av_opt_set(codec_ctx->priv_data, "profile", "baseline", 0); // профиль базовый для мобильных устройств
+    av_opt_set(codec_ctx->priv_data, "preset", "fast", 0);      // скорость кодирования. обратна пропорциональна качеству
+    av_opt_set(codec_ctx->priv_data, "tune", "zerolatency", 0); // минимальная задержка. обязательно для sip
 
     // Open the codec
     ret = avcodec_open2(codec_ctx, codec, NULL);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning("Could not open codec\n");
         return -1;
     }
 
     // Copy the codec parameters to the stream
     ret = avcodec_parameters_from_context(video_stream->codecpar, codec_ctx);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning("Could not copy codec parameters\n");
         return -1;
     }
@@ -118,9 +128,11 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
     video_stream->time_base = codec_ctx->time_base;
 
     // Open the output file (RTMP)
-    if (!(fmt_ctx->oformat->flags & AVFMT_NOFILE)) {
+    if (!(fmt_ctx->oformat->flags & AVFMT_NOFILE))
+    {
         ret = avio_open(&fmt_ctx->pb, output_url, AVIO_FLAG_WRITE);
-        if (ret < 0) {
+        if (ret < 0)
+        {
             warning("Could not open output URL\n");
             return -1;
         }
@@ -128,7 +140,8 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
 
     // Write the stream header
     ret = avformat_write_header(fmt_ctx, NULL);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning("Error occurred when opening output URL\n");
         return -1;
     }
@@ -140,16 +153,18 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
 }
 
 // Function to encode and send a frame
-static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt_ctx, AVFrame *frame, int frame_number, int fps) {
+static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt_ctx, AVFrame *frame, int frame_number, int fps)
+{
     int ret;
 
     // Calculate the PTS for the frame based on the frame number and time base
-    //AVRational time_base = codec_ctx->time_base;
-     //frame_number * (time_base.den / time_base.num) / fps;
+    // AVRational time_base = codec_ctx->time_base;
+    // frame_number * (time_base.den / time_base.num) / fps;
 
     // Send frame for encoding
     ret = avcodec_send_frame(codec_ctx, frame);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning(stderr, "Error sending frame to encoder: %s\n", av_err2str(ret));
         return ret;
     }
@@ -159,30 +174,36 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
     av_init_packet(&pkt);
 
     ret = avcodec_receive_packet(codec_ctx, &pkt);
-    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF) {
+    if (ret == AVERROR(EAGAIN) || ret == AVERROR_EOF)
+    {
         return 0; // Not an error, just no more packets to receive right now
-    } else if (ret < 0) {
+    }
+    else if (ret < 0)
+    {
         warning(stderr, "Error receiving packet from encoder: %s\n", av_err2str(ret));
         return ret;
     }
- 
+
     // Write the encoded packet to the output format context
-    pkt.stream_index = 0;  // Make sure the stream index is set correctly
+    pkt.stream_index = 0; // Make sure the stream index is set correctly
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning(stderr, "Error writing encoded packet: %s\n", av_err2str(ret));
         return ret;
-    } 
+    }
 
     av_packet_unref(&pkt);
     return 0;
 }
 
 // Function to generate and save SDP file
-static int write_sdp_file(AVFormatContext *fmt_ctx, const char *sdp_file_path) {
+static int write_sdp_file(AVFormatContext *fmt_ctx, const char *sdp_file_path)
+{
     char sdp[2048] = {0};
     int ret = av_sdp_create(&fmt_ctx, 1, sdp, sizeof(sdp));
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning("Failed to create SDP: %s\n", av_err2str(ret));
         return -1;
     }
@@ -191,7 +212,8 @@ static int write_sdp_file(AVFormatContext *fmt_ctx, const char *sdp_file_path) {
     FILE *sdp_file = fopen(sdp_file_path, "w");
     chmod(sdp_file_path, 0777);
 
-    if (!sdp_file) {
+    if (!sdp_file)
+    {
         warning("Could not open SDP file for writing\n");
         return -1;
     }
@@ -202,20 +224,35 @@ static int write_sdp_file(AVFormatContext *fmt_ctx, const char *sdp_file_path) {
     return 0;
 }
 
+static int delete_sbp_file(const char *sdp_file_path)
+{
+    int status;
+    status = remove(sdp_file_path);
+
+    if (status != 0) {
+        warning("Unable to delete SDP file\n");
+    }
+
+    return 0;
+}
+
 static const char *output_url = "rtp://127.0.0.1:5085";
+static const char *sdp_path = "/tmp/stream.sdp";
 static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
 static int ret;
 static bool isStreaming = false;
 static uint frameNumber = 0;
 
-static int stopStream() {
-    if (!isStreaming) {
+static int stopStream()
+{
+    if (!isStreaming)
+    {
         return 0;
     }
 
     info("stopping stream");
-      // Flush the encoder
+    // Flush the encoder
     encode_and_send_frame(fmt_ctx, codec_ctx, NULL, frameNumber, 30);
 
     // Write the trailer
@@ -226,101 +263,108 @@ static int stopStream() {
     avformat_free_context(fmt_ctx);
     avformat_network_deinit();
 
-	isStreaming = false;
+    delete_sbp_file(sdp_path);
+
+    isStreaming = false;
     frameNumber = 0;
 
     info("restream: stopped streaming at %s\n", output_url);
 }
 
-static int startStreamIfNeeded(int width, int height, int fps) {
-    if (isStreaming) {
+static int startStreamIfNeeded(int width, int height, int fps)
+{
+    if (isStreaming)
+    {
         return 0;
     }
 
     info(
         "restream: start streaming at %s width %d height %d fps %d\n",
-         output_url, width, height, fps
-    );
+        output_url, width, height, fps);
     // Open the RTMP stream
     ret = open_rtmp_stream(&fmt_ctx, output_url, &codec_ctx, width, height, fps);
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning("Failed to open RTMP stream\n");
         return -1;
     }
 
     // Write the SDP file (e.g., to "stream.sdp")
-    write_sdp_file(fmt_ctx, "/tmp/stream.sdp");
+    write_sdp_file(fmt_ctx, sdp_path);
 
-	isStreaming = true;
+    isStreaming = true;
     return 0;
 }
 
 static void decode_destructor(void *arg)
 {
-	return;
+    return;
 }
 
-struct vrx {
-	struct video *video;               /**< Parent                    */
-	const struct vidcodec *vc;         /**< Current video decoder     */
-	struct viddec_state *dec;          /**< Video decoder state       */
-	struct vidisp_prm vidisp_prm;      /**< Video display parameters  */
-	struct vidisp_st *vidisp;          /**< Video display             */
-	mtx_t lock;                        /**< Lock for decoder          */
-	struct list filtl;                 /**< Filters in decoding order */
-	struct tmr tmr_picup;              /**< Picture update timer      */
-	struct vidsz size;                 /**< Incoming video resolution */
-	enum vidfmt fmt;                   /**< Incoming pixel format     */
-	enum vidorient orient;             /**< Display orientation       */
-	char module[128];                  /**< Display module name       */
-	char device[128];                  /**< Display device name       */
-	int pt_rx;                         /**< Incoming RTP payload type */
-	int frames;                        /**< Number of frames received */
-	double efps;                       /**< Estimated frame-rate      */
-	unsigned n_intra;                  /**< Intra-frames decoded      */
-	unsigned n_picup;                  /**< Picture updates sent      */
+struct vrx
+{
+    struct video *video;          /**< Parent                    */
+    const struct vidcodec *vc;    /**< Current video decoder     */
+    struct viddec_state *dec;     /**< Video decoder state       */
+    struct vidisp_prm vidisp_prm; /**< Video display parameters  */
+    struct vidisp_st *vidisp;     /**< Video display             */
+    mtx_t lock;                   /**< Lock for decoder          */
+    struct list filtl;            /**< Filters in decoding order */
+    struct tmr tmr_picup;         /**< Picture update timer      */
+    struct vidsz size;            /**< Incoming video resolution */
+    enum vidfmt fmt;              /**< Incoming pixel format     */
+    enum vidorient orient;        /**< Display orientation       */
+    char module[128];             /**< Display module name       */
+    char device[128];             /**< Display device name       */
+    int pt_rx;                    /**< Incoming RTP payload type */
+    int frames;                   /**< Number of frames received */
+    double efps;                  /**< Estimated frame-rate      */
+    unsigned n_intra;             /**< Intra-frames decoded      */
+    unsigned n_picup;             /**< Picture updates sent      */
 };
 
-struct video {
+struct video
+{
 #ifndef RELEASE
     uint32_t magic;
 #endif
-	struct config_video cfg; /**< Video configuration                  */
-    struct vrx vrx;         /**< Receive/decoder direction            */
+    struct config_video cfg; /**< Video configuration                  */
+    struct vrx vrx;          /**< Receive/decoder direction            */
 };
 
 static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
-			 const struct vidfilt *vf, struct vidfilt_prm *prm,
-			 const struct video *vid)
+                         const struct vidfilt *vf, struct vidfilt_prm *prm,
+                         const struct video *vid)
 {
     stopStream();
 
     struct restream_dec *st;
-	(void)prm;
-	(void)vid;
+    (void)prm;
+    (void)vid;
 
-	if (!stp || !ctx || !vf)
-		return EINVAL;
+    if (!stp || !ctx || !vf)
+        return EINVAL;
 
-	if (*stp)
-		return 0;
+    if (*stp)
+        return 0;
 
-	st = mem_zalloc(sizeof(*st), decode_destructor);
-	if (!st)
-		return ENOMEM;
+    st = mem_zalloc(sizeof(*st), decode_destructor);
+    if (!st)
+        return ENOMEM;
 
     st->vid = vid;
     st->prm = prm;
 
-	*stp = (struct vidfilt_dec_st *)st;
+    *stp = (struct vidfilt_dec_st *)st;
 
-	return 0;
+    return 0;
 }
 
 static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
-			uint64_t *timestamp)
+                  uint64_t *timestamp)
 {
-    if (!frame) { 
+    if (!frame)
+    {
         debug("restream: no frame\n");
         return 0;
     }
@@ -341,11 +385,12 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
 
     startStreamIfNeeded(size.w, size.h, fps);
 
-    if (!isStreaming) {
+    if (!isStreaming)
+    {
         return 0;
     }
 
-	// Allocate  YUV frame
+    // Allocate  YUV frame
     AVFrame *yuv_frame = av_frame_alloc();
     yuv_frame->format = AV_PIX_FMT_YUV420P;
     yuv_frame->width = size.w;
@@ -354,7 +399,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->pts = frameNumber * av_rescale_q(1, codec_ctx->framerate, codec_ctx->time_base);
     // yuv_frame->pts = frameNumber * (codec_ctx->time_base.den / fps);
     // yuv_frame->dts = frame->pts;
-    //yuv_frame->pts = frameNumber;
+    // yuv_frame->pts = frameNumber;
 
     debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, timestamp, yuv_frame->pts);
 
@@ -374,46 +419,47 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     av_frame_unref(yuv_frame);
     av_frame_free(&yuv_frame);
 
-    if (ret < 0) {
+    if (ret < 0)
+    {
         warning("Failed to send frame\n");
         return -1;
     }
 
     frameNumber++;
 
-	return 0;
+    return 0;
 }
 
 static struct vidfilt restream = {
-	.name = "restream",
-	.dech = decode,
+    .name = "restream",
+    .dech = decode,
     .decupdh = decode_update,
 };
 
 static int module_init(void)
 {
-	vidfilt_register(baresip_vidfiltl(), &restream);
+    vidfilt_register(baresip_vidfiltl(), &restream);
 
     // Initialize FFmpeg
     avformat_network_init();
-  
+
     return 0;
 }
 
 static int module_close(void)
 {
-	vidfilt_unregister(&restream);
+    vidfilt_unregister(&restream);
 
     avformat_network_deinit();
 
     stopStream();
 
-	return 0;
+    return 0;
 }
 
 EXPORT_SYM const struct mod_export DECL_EXPORTS(restream) = {
-	"restream",
-	"vidfilt",
-	module_init,
-	module_close
+    "restream",
+    "vidfilt",
+    module_init,
+    module_close
 };
