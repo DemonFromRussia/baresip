@@ -88,9 +88,9 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
     // Set up codec parameters
     codec_ctx->width = width;
     codec_ctx->height = height;
-    codec_ctx->time_base = (AVRational){1, fps};
+    codec_ctx->time_base = (AVRational){1, VIDEO_TIMEBASE};
     codec_ctx->framerate = (AVRational){fps, 1};
-    codec_ctx->gop_size = 10 * fps; // Set GOP size
+    codec_ctx->gop_size = fps; // Set GOP size
     codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
     if (fmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
@@ -403,7 +403,8 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     // yuv_frame->pts = frameNumber * VIDEO_TIMEBASE * (codec_ctx->time_base.den / codec_ctx->time_base.num);
     // yuv_frame->dts = frame->pts;ы
     // yuv_frame->pts = frameNumber;
-    yuv_frame->pts = *timestamp * fps / VIDEO_TIMEBASE;
+    // yuv_frame->pts = *timestamp * fps / VIDEO_TIMEBASE;
+    yuv_frame->pts = *timestamp;
 
     debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
 
