@@ -296,7 +296,7 @@ static int startStreamIfNeeded(int width, int height, int fps, uint64_t *new_sta
     write_sdp_file(fmt_ctx, sdp_path);
 
     isStreaming = true;
-    start_timestamp = new_start_timestamp;
+    start_timestamp = *new_start_timestamp;
     return 0;
 }
 
