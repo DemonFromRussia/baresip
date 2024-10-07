@@ -403,9 +403,9 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     // yuv_frame->pts = frameNumber * VIDEO_TIMEBASE * (codec_ctx->time_base.den / codec_ctx->time_base.num);
     // yuv_frame->dts = frame->pts;ы
     // yuv_frame->pts = frameNumber;
-    yuv_frame->pts = timestamp;
+    yuv_frame->pts = *timestamp;
 
-    debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, timestamp, yuv_frame->pts);
+    debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
 
     // Allocate buffers for YUV frame
     av_frame_get_buffer(yuv_frame, 32);
