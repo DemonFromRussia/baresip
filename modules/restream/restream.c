@@ -186,6 +186,8 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
 
     // Write the encoded packet to the output format context
     pkt.stream_index = 0; // Make sure the stream index is set correctly
+    pkt.pts = frame->pts;
+    pkt.dts = frame->pkt_dts;
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0)
     {
