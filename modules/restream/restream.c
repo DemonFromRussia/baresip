@@ -373,8 +373,8 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
         return 0;
     }
 
-    // struct restream_dec *dec;
-    // dec = (struct restream_dec *) st;
+    struct restream_dec *dec;
+    dec = (struct restream_dec *) st;
 
     // struct vidsz size = dec->vid->vrx.size;
     // int fps = (int) dec->vid->vrx.efps;
@@ -408,7 +408,8 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     // yuv_frame->pts = *timestamp * fps / VIDEO_TIMEBASE;
     yuv_frame->pts = *timestamp - start_timestamp;
 
-    debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
+    debug("VIDFILT FPS: %d EFPS: %d VIDEOFPS: %d", dec->prm->fps, dec->vid->vrx.efps, dec->vid->cfg.fps);
+    // debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
 
     // Allocate buffers for YUV frame
     av_frame_get_buffer(yuv_frame, 32);
