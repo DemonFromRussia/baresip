@@ -408,7 +408,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     // yuv_frame->pts = *timestamp * fps / VIDEO_TIMEBASE;
     yuv_frame->pts = *timestamp - start_timestamp;
 
-    debug("VIDFILT FPS: %f EFPS: %f VIDEOFPS: %f", dec->prm->fps, dec->vid->vrx.efps, dec->vid->cfg.fps);
+    // debug("VIDFILT FPS: %f EFPS: %f VIDEOFPS: %f\n", dec->prm->fps, dec->vid->vrx.efps, dec->vid->cfg.fps);
     // debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
 
     // Allocate buffers for YUV frame
