@@ -187,7 +187,7 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
     // Write the encoded packet to the output format context
     pkt.stream_index = 0; // Make sure the stream index is set correctly
     pkt.pts = frame->pts;
-    pkt.dts = frame->pkt_dts;
+    pkt.dts = pkt.pts;
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0)
     {
@@ -380,7 +380,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     struct vidsz size;
     size = frame->size;
     int fps;
-    fps = 20;
+    fps = 25;
     // if (size.w == 0 || size.h == 0) {
     //     return 0;
     // }
@@ -399,8 +399,8 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->height = size.h;
 
     // yuv_frame->pts = frameNumber;
-    yuv_frame->pts = frameNumber * av_rescale_q(1, codec_ctx->framerate, codec_ctx->time_base);
-    // yuv_frame->pts = frameNumber * (codec_ctx->time_base.den / fps);
+    // yuv_frame->pts = frameNumber * av_rescale_q(1, codec_ctx->framerate, codec_ctx->time_base);
+    yuv_frame->pts = frameNumber * (codec_ctx->time_base.den / codec_ctx->time_base.num);
     // yuv_frame->dts = frame->pts;
     // yuv_frame->pts = frameNumber;
 
