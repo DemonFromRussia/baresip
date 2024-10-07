@@ -396,8 +396,8 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     yuv_frame->width = size.w;
     yuv_frame->height = size.h;
 
-    yuv_frame->pts = frameNumber;
-    // yuv_frame->pts = frameNumber * av_rescale_q(1, codec_ctx->framerate, codec_ctx->time_base);
+    // yuv_frame->pts = frameNumber;
+    yuv_frame->pts = frameNumber * av_rescale_q(1, codec_ctx->framerate, codec_ctx->time_base);
     // yuv_frame->pts = frameNumber * (codec_ctx->time_base.den / fps);
     // yuv_frame->dts = frame->pts;
     // yuv_frame->pts = frameNumber;
