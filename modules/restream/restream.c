@@ -244,6 +244,7 @@ static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
 static int ret;
 static bool isStreaming = false;
+static uint64_t *start_timestamp = NULL;
 static uint frameNumber = 0;
 
 static int stopStream()
@@ -273,7 +274,7 @@ static int stopStream()
     info("restream: stopped streaming at %s\n", output_url);
 }
 
-static int startStreamIfNeeded(int width, int height, int fps)
+static int startStreamIfNeeded(int width, int height, int fps, uint64_t *new_start_timestamp)
 {
     if (isStreaming)
     {
@@ -295,6 +296,7 @@ static int startStreamIfNeeded(int width, int height, int fps)
     write_sdp_file(fmt_ctx, sdp_path);
 
     isStreaming = true;
+    start_timestamp = new_start_timestamp;
     return 0;
 }
 
@@ -385,7 +387,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     //     return 0;
     // }
 
-    startStreamIfNeeded(size.w, size.h, fps);
+    startStreamIfNeeded(size.w, size.h, fps, timestamp);
 
     if (!isStreaming)
     {
@@ -404,7 +406,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     // yuv_frame->dts = frame->pts;ы
     // yuv_frame->pts = frameNumber;
     // yuv_frame->pts = *timestamp * fps / VIDEO_TIMEBASE;
-    yuv_frame->pts = *timestamp;
+    yuv_frame->pts = *timestamp - *start_timestamp;
 
     debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
 
