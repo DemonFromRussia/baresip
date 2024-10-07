@@ -244,7 +244,7 @@ static AVFormatContext *fmt_ctx = NULL;
 static AVCodecContext *codec_ctx = NULL;
 static int ret;
 static bool isStreaming = false;
-static uint64_t *start_timestamp = NULL;
+static uint64_t start_timestamp = NULL;
 static uint frameNumber = 0;
 
 static int stopStream()
@@ -406,7 +406,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     // yuv_frame->dts = frame->pts;ы
     // yuv_frame->pts = frameNumber;
     // yuv_frame->pts = *timestamp * fps / VIDEO_TIMEBASE;
-    yuv_frame->pts = *timestamp - *start_timestamp;
+    yuv_frame->pts = *timestamp - start_timestamp;
 
     debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
 
