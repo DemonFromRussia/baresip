@@ -90,7 +90,7 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
     codec_ctx->height = height;
     codec_ctx->time_base = (AVRational){1, fps};
     codec_ctx->framerate = (AVRational){fps, 1};
-    codec_ctx->gop_size = 12; // Set GOP size
+    codec_ctx->gop_size = 10 * fps; // Set GOP size
     codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
 
     if (fmt_ctx->oformat->flags & AVFMT_GLOBALHEADER)
