@@ -35,11 +35,13 @@
  \endverbatim
  */
 
-// Function to open an RTMP stream
-static int width = 640, height = 480, fps = 25;
+// // Function to open an RTMP stream
+// static int width = 640, height = 480, fps = 25;
 
 struct restream_dec {
 	struct vidfilt_dec_st vf;   /**< Inheritance           */
+    struct video *vid;
+    struct vidfilt_prm *prm;
 };
 
 static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, AVCodecContext **out_codec_ctx, int width, int height, int fps) {
@@ -187,6 +189,8 @@ static int write_sdp_file(AVFormatContext *fmt_ctx, const char *sdp_file_path) {
 
     // Write the SDP to a file
     FILE *sdp_file = fopen(sdp_file_path, "w");
+    chmod(sdp_file_path, 0777);
+
     if (!sdp_file) {
         warning("Could not open SDP file for writing\n");
         return -1;
@@ -212,7 +216,7 @@ static int stopStream() {
 
     info("stopping stream");
       // Flush the encoder
-    encode_and_send_frame(fmt_ctx, codec_ctx, NULL, frameNumber, fps);
+    encode_and_send_frame(fmt_ctx, codec_ctx, NULL, frameNumber, 30);
 
     // Write the trailer
     av_write_trailer(fmt_ctx);
@@ -229,14 +233,9 @@ static int stopStream() {
 }
 
 static int startStreamIfNeeded(int width, int height, int fps) {
-    // if (isStreaming) {
-    //     if (width != codec_ctx->width || height != codec_ctx->height) {
-    //         stopStream();
-    //     } else {
-    //         return 
-    //     }
-        
-    // }
+    if (isStreaming) {
+        return 0;
+    }
 
     info(
         "restream: start streaming at %s width %d height %d fps %d\n",
@@ -261,23 +260,40 @@ static void decode_destructor(void *arg)
 	return;
 }
 
+struct vrx {
+	struct video *video;               /**< Parent                    */
+	const struct vidcodec *vc;         /**< Current video decoder     */
+	struct viddec_state *dec;          /**< Video decoder state       */
+	struct vidisp_prm vidisp_prm;      /**< Video display parameters  */
+	struct vidisp_st *vidisp;          /**< Video display             */
+	mtx_t lock;                        /**< Lock for decoder          */
+	struct list filtl;                 /**< Filters in decoding order */
+	struct tmr tmr_picup;              /**< Picture update timer      */
+	struct vidsz size;                 /**< Incoming video resolution */
+	enum vidfmt fmt;                   /**< Incoming pixel format     */
+	enum vidorient orient;             /**< Display orientation       */
+	char module[128];                  /**< Display module name       */
+	char device[128];                  /**< Display device name       */
+	int pt_rx;                         /**< Incoming RTP payload type */
+	int frames;                        /**< Number of frames received */
+	double efps;                       /**< Estimated frame-rate      */
+	unsigned n_intra;                  /**< Intra-frames decoded      */
+	unsigned n_picup;                  /**< Picture updates sent      */
+};
+
 struct video {
 #ifndef RELEASE
     uint32_t magic;
 #endif
 	struct config_video cfg; /**< Video configuration                  */
+    struct vrx vrx;         /**< Receive/decoder direction            */
 };
 
 static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
 			 const struct vidfilt *vf, struct vidfilt_prm *prm,
 			 const struct video *vid)
 {
-    width = vid->cfg.width;
-    height = vid->cfg.height;
-    fps = (int) vid->cfg.fps;
-
     stopStream();
-    ret = startStreamIfNeeded(width, height, fps);
 
     struct restream_dec *st;
 	(void)prm;
@@ -293,6 +309,9 @@ static int decode_update(struct vidfilt_dec_st **stp, void **ctx,
 	if (!st)
 		return ENOMEM;
 
+    st->vid = vid;
+    st->prm = prm;
+
 	*stp = (struct vidfilt_dec_st *)st;
 
 	return 0;
@@ -306,17 +325,31 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
         return 0;
     }
 
+    // struct restream_dec *dec;
+    // dec = (struct restream_dec *) st;
+
+    // struct vidsz size = dec->vid->vrx.size;
+    // int fps = (int) dec->vid->vrx.efps;
+
+    struct vidsz size;
+    size = frame->size;
+    int fps;
+    fps = 20;
+    // if (size.w == 0 || size.h == 0) {
+    //     return 0;
+    // }
+
+    startStreamIfNeeded(size.w, size.h, fps);
+
     if (!isStreaming) {
         return 0;
     }
 
-    // startStreamIfNeeded(frame->size.w, frame->size.h, fps);
-
 	// Allocate  YUV frame
     AVFrame *yuv_frame = av_frame_alloc();
     yuv_frame->format = AV_PIX_FMT_YUV420P;
-    yuv_frame->width = width;
-    yuv_frame->height = height;
+    yuv_frame->width = size.w;
+    yuv_frame->height = size.h;
 
     yuv_frame->pts = frameNumber * av_rescale_q(1, codec_ctx->framerate, codec_ctx->time_base);
     // yuv_frame->pts = frameNumber * (codec_ctx->time_base.den / fps);
