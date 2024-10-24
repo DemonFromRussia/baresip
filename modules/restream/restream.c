@@ -186,7 +186,7 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
 
     // Write the encoded packet to the output format context
     pkt.stream_index = 0; // Make sure the stream index is set correctly
-    // pkt.pts = frame->pts;
+    pkt.pts = video_calc_rtp_timestamp_fix(frame->pts);
     // pkt.dts = pkt.pts;
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0)
@@ -406,7 +406,7 @@ static int decode(struct vidfilt_dec_st *st, struct vidframe *frame,
     // yuv_frame->dts = frame->pts;ы
     // yuv_frame->pts = frameNumber;
     // yuv_frame->pts = *timestamp * fps / VIDEO_TIMEBASE;
-    yuv_frame->pts = *timestamp - start_timestamp;
+    yuv_frame->pts = *timestamp;
 
     // debug("VIDFILT FPS: %f EFPS: %f VIDEOFPS: %f\n", dec->prm->fps, dec->vid->vrx.efps, dec->vid->cfg.fps);
     // debug("Frame: %d, Timestamp: %lld, PTS: %lld\n", frameNumber, *timestamp, yuv_frame->pts);
