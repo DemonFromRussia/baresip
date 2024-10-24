@@ -88,7 +88,7 @@ static int open_rtmp_stream(AVFormatContext **out_ctx, const char *output_url, A
     // Set up codec parameters
     codec_ctx->width = width;
     codec_ctx->height = height;
-    codec_ctx->time_base = (AVRational){1, VIDEO_TIMEBASE};
+    codec_ctx->time_base = (AVRational){1, fps};
     codec_ctx->framerate = (AVRational){fps, 1};
     codec_ctx->gop_size = fps; // Set GOP size
     codec_ctx->pix_fmt = AV_PIX_FMT_YUV420P;
@@ -186,7 +186,7 @@ static int encode_and_send_frame(AVCodecContext *codec_ctx, AVFormatContext *fmt
 
     // Write the encoded packet to the output format context
     pkt.stream_index = 0; // Make sure the stream index is set correctly
-    pkt.pts = video_calc_rtp_timestamp_fix(frame->pts);
+    // pkt.pts = video_calc_rtp_timestamp_fix(frame->pts);
     // pkt.dts = pkt.pts;
     ret = av_interleaved_write_frame(fmt_ctx, &pkt);
     if (ret < 0)
